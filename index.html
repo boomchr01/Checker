@@ -61,7 +61,7 @@ th { background-color: #232f3e; color: #fff; }
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.1</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span id="printTimestamp"></span> <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.2</span></h2>
 
 <div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
@@ -219,12 +219,16 @@ appendRows(removedRows, 'removed', '- REMOVE');
 tBody.innerHTML = bodyHtml;
 };
 
-// ปรับความสูง textarea ให้พอดีเป๊ะไม่ออกทะเล
+// ปรับความสูง textarea และเพิ่ม timestamp ก่อนพิมพ์
 window.printReport = function() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('printTimestamp').innerHTML = `<span style="font-size: 14px; color: #555; font-weight: normal;">(พิมพ์เมื่อ ${dateStr} เวลา ${timeStr})</span>`;
+
     const textAreas = document.querySelectorAll('textarea');
     textAreas.forEach(ta => {
         ta.dataset.originalHeight = ta.style.height;
-        // คำนวณความสูงแบบพอดีเป๊ะ
         const computedStyle = window.getComputedStyle(ta);
         const lineHt = parseFloat(computedStyle.lineHeight) || 14;
         const lineCount = ta.value.split('\n').length;
@@ -236,6 +240,8 @@ window.printReport = function() {
 
     window.print();
 
+    // ล้างค่า timestamp และคืนความสูงเดิม
+    document.getElementById('printTimestamp').innerText = '';
     textAreas.forEach(ta => {
         ta.style.height = ta.dataset.originalHeight || '';
     });
