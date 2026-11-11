@@ -27,7 +27,7 @@ th { background-color: #232f3e; color: #fff; }
 .input-grid { display: flex; gap: 20px; }
 .file-input { flex: 1; display: flex; flex-direction: column; gap: 5px; }
 
-/* CSS สำหรับการสั่ง Print ให้แสดงเนื้อหาใน textarea ครบถ้วน */
+/* CSS สำหรับการสั่ง Print โดยเฉพาะ */
 @media print {
     body { background: #fff; padding: 0; }
     .container { box-shadow: none; padding: 0; width: 100%; max-width: none; }
@@ -42,20 +42,17 @@ th { background-color: #232f3e; color: #fff; }
     th, td { padding: 4px 6px; }
     th { background-color: #eee !important; color: #000 !important; border: 1px solid #999; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    /* ปรับแต่งส่วน Input ตอนพิมพ์ให้ขยายตามความยาวข้อความจริง */
     .input-section { margin-top: 40px; page-break-before: always; border-top: 1px solid #000; }
     .input-grid { flex-direction: column; gap: 15px; }
     
-    /* ยกเลิกความสูงจำกัด และบังคับให้แสดง Text ทั้งหมด */
+    /* บังคับให้ textarea แสดงผลเต็มความสูงตามเนื้อหาจริง */
     textarea { 
         border: 1px solid #999; 
         background: #f9f9f9; 
-        height: auto !important; 
-        min-height: 200px; 
         font-size: 9px; 
         color: #333; 
         resize: none;
-        overflow: visible;
+        overflow: hidden; /* ซ่อน scrollbar ตอนพิมพ์ */
         -webkit-print-color-adjust: exact; 
         print-color-adjust: exact; 
     }
@@ -64,7 +61,7 @@ th { background-color: #232f3e; color: #fff; }
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.9</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.0</span></h2>
 
 <div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
@@ -222,8 +219,22 @@ appendRows(removedRows, 'removed', '- REMOVE');
 tBody.innerHTML = bodyHtml;
 };
 
+// ฟังก์ชันขยายความสูง textarea ให้พอดีกับข้อความก่อนพิมพ์
 window.printReport = function() {
+    const textAreas = document.querySelectorAll('textarea');
+    textAreas.forEach(ta => {
+        // เก็บความสูงเดิมไว้ก่อน
+        ta.dataset.originalHeight = ta.style.height;
+        // ปรับความสูงตาม scrollHeight เพื่อให้เห็นข้อความทั้งหมด
+        ta.style.height = ta.scrollHeight + 'px';
+    });
+
     window.print();
+
+    // คืนค่าความสูงเดิมหลังจากสั่งพิมพ์เสร็จ
+    textAreas.forEach(ta => {
+        ta.style.height = ta.dataset.originalHeight || '';
+    });
 };
 </script>
 </body>
