@@ -19,7 +19,7 @@ th { background-color: #232f3e; color: #fff; }
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Drift Detector (Group ID Tracking) <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.4</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.5</span></h2>
 
 <b>1. ข้อมูลเดิม (Baseline)</b>
 <textarea id="box1" placeholder="ก๊อปปี้ข้อมูลจากไฟล์เดิมมาวาง..."></textarea>
@@ -59,10 +59,9 @@ var lines2 = txt2.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; })
 var separator = lines1[0].indexOf('\t') !== -1 ? '\t' : ',';
 var headers = lines1[0].split(separator).map(function(h) { return h.replace(/["']/g,'').trim(); });
 
-// --- ส่วนที่แก้ไข: หาตำแหน่งคอลัมน์ที่รองรับทั้ง GroupId, Group ID, SecurityGroupId ---
+// ค้นหาตำแหน่งคอลัมน์ที่รองรับทั้ง GroupId, Group ID, SecurityGroupId
 var groupIdIndex = -1;
 for(var k = 0; k < headers.length; k++) {
-    // แปลงเป็นตัวเล็ก และตัดเว้นวรรคทิ้งทั้งหมด
     var cleanHeader = headers[k].toLowerCase().replace(/\s+/g, ''); 
     if(cleanHeader.indexOf('groupid') !== -1) {
         groupIdIndex = k;
@@ -106,7 +105,6 @@ var removedRows = [];
 var changedFromRows = [];
 var changedToRows = [];
 
-// ฟังก์ชันเช็คว่าแถวนี้มีอยู่เหมือนกันเป๊ะใน Array ของแถวหรือไม่
 function containsRow(rowArray, targetRow) {
     var targetStr = targetRow.join('|').toLowerCase();
     for(var i = 0; i < rowArray.length; i++) {
@@ -119,20 +117,16 @@ function containsRow(rowArray, targetRow) {
 for(var gid in map2) {
     var currentGroupRules = map2[gid];
     if(!map1[gid]) {
-        // กรณีที่ 1: Group ID นี้ไม่มีใน Baseline เลย -> New Add ทั้งหมด
         addedRows = addedRows.concat(currentGroupRules);
     } else {
-        // มี Group ID นี้อยู่เดิม -> เช็คว่ามี Rule เปลี่ยนแปลงไหม
         var baselineGroupRules = map1[gid];
         currentGroupRules.forEach(function(cRow) {
             if(!containsRow(baselineGroupRules, cRow)) {
-                // เช็คว่ามีบรรทัดนี้ใน Baseline ไหม ถ้าไม่มีแสดงว่ามีการแก้ไขเพิ่มเข้ามา
                 changedToRows.push(cRow);
             }
         });
         baselineGroupRules.forEach(function(bRow) {
             if(!containsRow(currentGroupRules, bRow)) {
-                // เช็คว่าของเดิมหายไปไหน ถ้าไม่มีในปัจจุบันแสดงว่าถูกเปลี่ยนจากของเดิม
                 changedFromRows.push(bRow);
             }
         });
@@ -142,7 +136,6 @@ for(var gid in map2) {
 // เทียบหา Remove
 for(var gid in map1) {
     if(!map2[gid]) {
-        // Group ID นี้ถูกลบไปแล้ว
         removedRows = removedRows.concat(map1[gid]);
     }
 }
@@ -175,7 +168,6 @@ function appendRows(rows, className, statusLabel) {
     });
 }
 
-// เรียงลำดับการแสดงผลตาราง
 appendRows(addedRows, 'added', '+ NEW ADD');
 appendRows(changedFromRows, 'changed-from', '✏️ CHANGE FROM');
 appendRows(changedToRows, 'changed-to', '✏️ CHANGE TO');
