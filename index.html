@@ -27,23 +27,32 @@ th { background-color: #232f3e; color: #fff; }
 .input-grid { display: flex; gap: 20px; }
 .file-input { flex: 1; display: flex; flex-direction: column; gap: 5px; }
 
-/* CSS สำหรับการสั่ง Print โดยเฉพาะ */
+/* CSS สำหรับการสั่ง Print */
 @media print {
     body { background: #fff; padding: 0; }
     .container { box-shadow: none; padding: 0; width: 100%; max-width: none; }
-    .input-section, .button-group { display: none !important; }
+    
+    /* ซ่อนปุ่มกดตอนพิมพ์ แต่ให้แสดง input section ไว้ด้านล่างตามต้องการ */
+    .button-group { display: none !important; }
+    
     h2 { font-size: 18px; margin-bottom: 10px !important; }
     #resultText { margin-bottom: 15px; font-size: 14px; }
-    table { font-size: 11px; margin-top: 0; }
+    
+    table { font-size: 11px; margin-top: 0; page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
     th, td { padding: 4px 6px; }
     th { background-color: #eee !important; color: #000 !important; border: 1px solid #999; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    tr { page-break-inside: avoid; }
+
+    /* ปรับแต่งส่วน Input ตอนพิมพ์ให้อยู่ด้านล่างและดูเรียบร้อย */
+    .input-section { margin-top: 40px; page-break-before: always; border-top: 1px solid #000; }
+    .input-grid { flex-direction: column; gap: 15px; }
+    textarea { border: 1px solid #999; background: #f9f9f9; height: 120px; font-size: 10px; color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.7</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.8</span></h2>
 
 <div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
