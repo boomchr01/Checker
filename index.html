@@ -6,8 +6,15 @@
 <style>
 body { font-family: Tahoma, sans-serif; padding: 20px; background: #f4f5f7; }
 .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-textarea { width: 100%; height: 120px; margin-bottom: 15px; padding: 10px; font-family: monospace; box-sizing: border-box; }
-button { padding: 12px 20px; background: #ff9900; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; font-size: 14px; }
+textarea { width: 100%; height: 100px; font-family: monospace; box-sizing: border-box; }
+
+.button-group { display: flex; gap: 10px; margin: 15px 0; }
+button { padding: 12px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; font-size: 14px; flex: 1; }
+#runBtn { background-color: #ff9900; color: #000; }
+#runBtn:hover { background-color: #e38900; }
+#printBtn { background-color: #007bff; color: #fff; }
+#printBtn:hover { background-color: #0069d9; }
+
 table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
 th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
 th { background-color: #232f3e; color: #fff; }
@@ -15,35 +22,59 @@ th { background-color: #232f3e; color: #fff; }
 .removed { background-color: #ffeef0; border-left: 4px solid #dc3545; }
 .changed-from { background-color: #fff3cd; border-left: 4px solid #ffc107; }
 .changed-to { background-color: #e2e3e5; border-left: 4px solid #6c757d; }
+
+.input-section { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
+.input-grid { display: flex; gap: 20px; }
+.file-input { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+
+/* CSS สำหรับการสั่ง Print โดยเฉพาะ */
+@media print {
+    body { background: #fff; padding: 0; }
+    .container { box-shadow: none; padding: 0; width: 100%; max-width: none; }
+    .input-section, .button-group { display: none !important; }
+    h2 { font-size: 18px; margin-bottom: 10px !important; }
+    #resultText { margin-bottom: 15px; font-size: 14px; }
+    table { font-size: 11px; margin-top: 0; }
+    th, td { padding: 4px 6px; }
+    th { background-color: #eee !important; color: #000 !important; border: 1px solid #999; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr { page-break-inside: avoid; }
+}
 </style>
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.5</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v1.7</span></h2>
 
-<b>1. ข้อมูลเดิม (Baseline)</b>
-<textarea id="box1" placeholder="ก๊อปปี้ข้อมูลจากไฟล์เดิมมาวาง..."></textarea>
-
-<b>2. ข้อมูลปัจจุบัน (Current)</b>
-<textarea id="box2" placeholder="ก๊อปปี้ข้อมูลจากไฟล์ปัจจุบันมาวาง..."></textarea>
-
-<!-- ปุ่มนี้จะถูกเปลี่ยนชื่อโดย JS ถ้าอนุญาตให้รัน -->
-<button id="runBtn" onclick="window.runCompare()">กำลังตรวจสอบสิทธิ์ JS...</button>
-
-<div id="resultText" style="margin-top:15px; font-weight:bold;"></div>
+<div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
 <thead id="tHead"></thead>
 <tbody id="tBody"></tbody>
 </table>
+
+<div class="button-group">
+    <button id="runBtn" onclick="window.runCompare()">กำลังตรวจสอบสิทธิ์ JS...</button>
+    <button id="printBtn" onclick="window.printReport()" style="display:none;">🖨️ Print Report</button>
+</div>
+
+<div class="input-section">
+    <h3>Input Data Reference</h3>
+    <div class="input-grid">
+        <div class="file-input">
+            <label for="box1"><b>1. ข้อมูลเดิม (Baseline)</b></label>
+            <textarea id="box1" placeholder="ก๊อปปี้ข้อมูลจากไฟล์เดิมมาวาง..."></textarea>
+        </div>
+        <div class="file-input">
+            <label for="box2"><b>2. ข้อมูลปัจจุบัน (Current)</b></label>
+            <textarea id="box2" placeholder="ก๊อปปี้ข้อมูลจากไฟล์ปัจจุบันมาวาง..."></textarea>
+        </div>
+    </div>
+</div>
+
 </div>
 
 <script>
-// 1. ทันทีที่โหลดไฟล์ ถ้าบรรทัดนี้ทำงาน ชื่อปุ่มต้องเปลี่ยน
 document.getElementById('runBtn').innerText = "Compare Security Groups";
-document.getElementById('runBtn').style.backgroundColor = "#28a745";
-document.getElementById('runBtn').style.color = "#fff";
 
-// 2. ฟังก์ชันตรวจสอบ (ยัดเข้า Global Scope ตรงๆ)
 window.runCompare = function() {
 var txt1 = document.getElementById('box1').value.trim();
 var txt2 = document.getElementById('box2').value.trim();
@@ -59,7 +90,6 @@ var lines2 = txt2.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; })
 var separator = lines1[0].indexOf('\t') !== -1 ? '\t' : ',';
 var headers = lines1[0].split(separator).map(function(h) { return h.replace(/["']/g,'').trim(); });
 
-// ค้นหาตำแหน่งคอลัมน์ที่รองรับทั้ง GroupId, Group ID, SecurityGroupId
 var groupIdIndex = -1;
 for(var k = 0; k < headers.length; k++) {
     var cleanHeader = headers[k].toLowerCase().replace(/\s+/g, ''); 
@@ -70,18 +100,13 @@ for(var k = 0; k < headers.length; k++) {
 }
 
 if(groupIdIndex === -1) {
-    alert("ไม่พบหัวตารางที่ระบุ Group ID (ลองเช็คว่ามีคอลัมน์ชื่อ Group ID หรือ GroupId หรือไม่)");
+    alert("ไม่พบหัวตารางที่ระบุ Group ID");
     return;
-}
-
-function normalizeLine(line) {
-    return line.replace(/["']/g, '').trim().toLowerCase();
 }
 
 var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
 var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
 
-// สร้าง Map เก็บข้อมูลโดยใช้ Group ID เป็น Key
 var map1 = {};
 rows1.forEach(function(row) {
     var gid = (row[groupIdIndex] || "").toLowerCase();
@@ -113,7 +138,6 @@ function containsRow(rowArray, targetRow) {
     return false;
 }
 
-// เทียบหา New Add และ Change
 for(var gid in map2) {
     var currentGroupRules = map2[gid];
     if(!map1[gid]) {
@@ -133,7 +157,6 @@ for(var gid in map2) {
     }
 }
 
-// เทียบหา Remove
 for(var gid in map1) {
     if(!map2[gid]) {
         removedRows = removedRows.concat(map1[gid]);
@@ -148,11 +171,13 @@ var tBody = document.getElementById('tBody');
 if(addedRows.length === 0 && removedRows.length === 0 && changedToRows.length === 0) {
     rText.innerHTML = "<span style='color:green;'>✅ ไม่พบการเปลี่ยนแปลง (Rule ตรงกัน 100%)</span>";
     rTable.style.display = 'none';
+    document.getElementById('printBtn').style.display = 'none';
     return;
 }
 
 rText.innerHTML = "⚠️ พบการเปลี่ยนแปลง: <span style='color:green;'>New Add " + addedRows.length + "</span>, <span style='color:red;'>Remove " + removedRows.length + "</span>, <span style='color:orange;'>Change " + changedToRows.length + "</span>";
 rTable.style.display = 'table';
+document.getElementById('printBtn').style.display = 'inline-block';
 
 var headHtml = "<tr><th>Status</th>";
 headers.forEach(function(h) { headHtml += "<th>" + h + "</th>"; });
@@ -174,6 +199,10 @@ appendRows(changedToRows, 'changed-to', '✏️ CHANGE TO');
 appendRows(removedRows, 'removed', '- REMOVE');
 
 tBody.innerHTML = bodyHtml;
+};
+
+window.printReport = function() {
+    window.print();
 };
 </script>
 </body>
