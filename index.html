@@ -122,8 +122,8 @@ if(groupIdIndex === -1) {
     return;
 }
 
-var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).call(function(c) { return c.replace(/["']/g,'').trim(); }); });
-var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).call(function(c) { return c.replace(/["']/g,'').trim(); }); });
+var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
+var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
 
 var map1 = {};
 rows1.forEach(function(row) {
