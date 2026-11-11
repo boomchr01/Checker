@@ -60,7 +60,7 @@ th { background-color: #232f3e; color: #fff; }
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span id="printTimestamp"></span> <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.4</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span id="printTimestamp"></span> <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.5</span></h2>
 
 <div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
@@ -69,7 +69,6 @@ th { background-color: #232f3e; color: #fff; }
 </table>
 
 <div class="button-group">
-    <!-- แก้ไขเป็นชื่อปุ่มตรงๆ เลย ไม่ต้องพึ่ง JS ในการเปลี่ยนชื่อตอนเริ่มต้น -->
     <button id="runBtn" onclick="window.runCompare()">Compare Security Groups</button>
     <button id="printBtn" onclick="window.printReport()" style="display:none;">🖨️ Print Report</button>
 </div>
@@ -187,7 +186,8 @@ window.runCompare = function() {
     if(addedRows.length === 0 && removedRows.length === 0 && changedToRows.length === 0) {
         rText.innerHTML = "<span style='color:green;'>✅ No changes detected (Rules match 100%)</span>";
         rTable.style.display = 'none';
-        document.getElementById('printBtn').style.display = 'none';
+        // เปลี่ยนเป็นแสดงปุ่ม Print ทันทีแม้จะไม่มีอะไรเปลี่ยนแปลง
+        document.getElementById('printBtn').style.display = 'inline-block';
         return;
     }
 
