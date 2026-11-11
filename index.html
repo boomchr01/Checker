@@ -60,7 +60,7 @@ th { background-color: #232f3e; color: #fff; }
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span id="printTimestamp"></span> <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.3</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span id="printTimestamp"></span> <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.4</span></h2>
 
 <div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
@@ -69,7 +69,8 @@ th { background-color: #232f3e; color: #fff; }
 </table>
 
 <div class="button-group">
-    <button id="runBtn" onclick="window.runCompare()">Initializing JS...</button>
+    <!-- แก้ไขเป็นชื่อปุ่มตรงๆ เลย ไม่ต้องพึ่ง JS ในการเปลี่ยนชื่อตอนเริ่มต้น -->
+    <button id="runBtn" onclick="window.runCompare()">Compare Security Groups</button>
     <button id="printBtn" onclick="window.printReport()" style="display:none;">🖨️ Print Report</button>
 </div>
 
@@ -90,70 +91,161 @@ th { background-color: #232f3e; color: #fff; }
 </div>
 
 <script>
-document.getElementById('runBtn').innerText = "Compare Security Groups";
-
 window.runCompare = function() {
-var txt1 = document.getElementById('box1').value.trim();
-var txt2 = document.getElementById('box2').value.trim();
+    var txt1 = document.getElementById('box1').value.trim();
+    var txt2 = document.getElementById('box2').value.trim();
 
-if(txt1 === "" || txt2 === "") {
-alert("Warning: Please provide data in both input fields.");
-return;
-}
-
-var lines1 = txt1.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
-var lines2 = txt2.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
-
-var separator = lines1[0].indexOf('\t') !== -1 ? '\t' : ',';
-var headers = lines1[0].split(separator).map(function(h) { return h.replace(/["']/g,'').trim(); });
-
-var groupIdIndex = -1;
-for(var k = 0; k < headers.length; k++) {
-    var cleanHeader = headers[k].toLowerCase().replace(/\s+/g, ''); 
-    if(cleanHeader.indexOf('groupid') !== -1) {
-        groupIdIndex = k;
-        break;
+    if(txt1 === "" || txt2 === "") {
+        alert("Warning: Please provide data in both input fields.");
+        return;
     }
-}
 
-if(groupIdIndex === -1) {
-    alert("Error: 'Group ID' column not found in headers.");
-    return;
-}
+    var lines1 = txt1.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
+    var lines2 = txt2.split(/\r?\n/).filter(function(l) { return l.trim() !== ''; });
 
-var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
-var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
+    var separator = lines1[0].indexOf('\t') !== -1 ? '\t' : ',';
+    var headers = lines1[0].split(separator).map(function(h) { return h.replace(/["']/g,'').trim(); });
 
-var map1 = {};
-rows1.forEach(function(row) {
-    var gid = (row[groupIdIndex] || "").toLowerCase();
-    if(gid) {
-        if(!map1[gid]) map1[gid] = [];
-        map1[gid].push(row);
+    var groupIdIndex = -1;
+    for(var k = 0; k < headers.length; k++) {
+        var cleanHeader = headers[k].toLowerCase().replace(/\s+/g, ''); 
+        if(cleanHeader.indexOf('groupid') !== -1) {
+            groupIdIndex = k;
+            break;
+        }
     }
-});
 
-var map2 = {};
-rows2.forEach(function(row) {
-    var gid = (row[groupIdIndex] || "").toLowerCase();
-    if(gid) {
-        if(!map2[gid]) map2[gid] = [];
-        map2[gid].push(row);
+    if(groupIdIndex === -1) {
+        alert("Error: 'Group ID' column not found in headers.");
+        return;
     }
-});
 
-var addedRows = [];
-var removedRows = [];
-var changedFromRows = [];
-var changedToRows = [];
+    var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
+    var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
 
-function containsRow(rowArray, targetRow) {
-    var targetStr = targetRow.join('|').toLowerCase();
-    for(var i = 0; i < rowArray.length; i++) {
-        if(rowArray[i].join('|').toLowerCase() === targetStr) return true;
+    var map1 = {};
+    rows1.forEach(function(row) {
+        var gid = (row[groupIdIndex] || "").toLowerCase();
+        if(gid) {
+            if(!map1[gid]) map1[gid] = [];
+            map1[gid].push(row);
+        }
+    });
+
+    var map2 = {};
+    rows2.forEach(function(row) {
+        var gid = (row[groupIdIndex] || "").toLowerCase();
+        if(gid) {
+            if(!map2[gid]) map2[gid] = [];
+            map2[gid].push(row);
+        }
+    });
+
+    var addedRows = [];
+    var removedRows = [];
+    var changedFromRows = [];
+    var changedToRows = [];
+
+    function containsRow(rowArray, targetRow) {
+        var targetStr = targetRow.join('|').toLowerCase();
+        for(var i = 0; i < rowArray.length; i++) {
+            if(rowArray[i].join('|').toLowerCase() === targetStr) return true;
+        }
+        return false;
     }
-    return false;
-}
 
-for(var gid in map2) {
-    var current
+    for(var gid in map2) {
+        var currentGroupRules = map2[gid];
+        if(!map1[gid]) {
+            addedRows = addedRows.concat(currentGroupRules);
+        } else {
+            var baselineGroupRules = map1[gid];
+            currentGroupRules.forEach(function(cRow) {
+                if(!containsRow(baselineGroupRules, cRow)) {
+                    changedToRows.push(cRow);
+                }
+            });
+            baselineGroupRules.forEach(function(bRow) {
+                if(!containsRow(currentGroupRules, bRow)) {
+                    changedFromRows.push(bRow);
+                }
+            });
+        }
+    }
+
+    for(var gid in map1) {
+        if(!map2[gid]) {
+            removedRows = removedRows.concat(map1[gid]);
+        }
+    }
+
+    var rText = document.getElementById('resultText');
+    var rTable = document.getElementById('resultTable');
+    var tHead = document.getElementById('tHead');
+    var tBody = document.getElementById('tBody');
+
+    if(addedRows.length === 0 && removedRows.length === 0 && changedToRows.length === 0) {
+        rText.innerHTML = "<span style='color:green;'>✅ No changes detected (Rules match 100%)</span>";
+        rTable.style.display = 'none';
+        document.getElementById('printBtn').style.display = 'none';
+        return;
+    }
+
+    rText.innerHTML = "⚠️ Changes detected: <span style='color:green;'>New Add " + addedRows.length + "</span>, <span style='color:red;'>Remove " + removedRows.length + "</span>, <span style='color:orange;'>Change " + changedToRows.length + "</span>";
+    rTable.style.display = 'table';
+    document.getElementById('printBtn').style.display = 'inline-block';
+
+    var headHtml = "<tr><th>Status</th>";
+    headers.forEach(function(h) { headHtml += "<th>" + h + "</th>"; });
+    headHtml += "</tr>";
+    tHead.innerHTML = headHtml;
+
+    var bodyHtml = "";
+    function appendRows(rows, className, statusLabel) {
+        rows.forEach(function(r) {
+            bodyHtml += "<tr class='" + className + "'><td><b>" + statusLabel + "</b></td>";
+            r.forEach(function(c) { bodyHtml += "<td>" + c + "</td>"; });
+            bodyHtml += "</tr>";
+        });
+    }
+
+    appendRows(addedRows, 'added', '+ NEW ADD');
+    appendRows(changedFromRows, 'changed-from', '✏️ CHANGE FROM');
+    appendRows(changedToRows, 'changed-to', '✏️ CHANGE TO');
+    appendRows(removedRows, 'removed', '- REMOVE');
+
+    tBody.innerHTML = bodyHtml;
+};
+
+// ใช้ฟังก์ชันแบบดั้งเดิม (ES5) เพื่อป้องกันปัญหาในทุกบราวเซอร์
+window.printReport = function() {
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('printTimestamp').innerHTML = '<span style="font-size: 14px; color: #555; font-weight: normal;">(Printed on ' + dateStr + ' at ' + timeStr + ')</span>';
+
+    var textAreas = document.querySelectorAll('textarea');
+    for (var i = 0; i < textAreas.length; i++) {
+        var ta = textAreas[i];
+        ta.setAttribute('data-original-height', ta.style.height);
+        
+        var computedStyle = window.getComputedStyle(ta);
+        var lineHt = parseFloat(computedStyle.lineHeight) || 14;
+        var lineCount = ta.value.split('\n').length;
+        var padding = parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
+        var calculatedHeight = (lineCount * lineHt) + padding + 10;
+        
+        ta.style.height = Math.max(100, calculatedHeight) + 'px';
+    }
+
+    window.print();
+
+    document.getElementById('printTimestamp').innerText = '';
+    for (var j = 0; j < textAreas.length; j++) {
+        var taReturn = textAreas[j];
+        taReturn.style.height = taReturn.getAttribute('data-original-height') || '';
+    }
+};
+</script>
+</body>
+</html>
