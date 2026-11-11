@@ -45,14 +45,14 @@ th { background-color: #232f3e; color: #fff; }
     .input-section { margin-top: 40px; page-break-before: always; border-top: 1px solid #000; }
     .input-grid { flex-direction: column; gap: 15px; }
     
-    /* บังคับให้ textarea แสดงผลเต็มความสูงตามเนื้อหาจริง */
+    /* ปรับแต่ง textarea ตอนพิมพ์ให้พอดีเนื้อหา ไม่ขยายเว่อร์ */
     textarea { 
         border: 1px solid #999; 
         background: #f9f9f9; 
         font-size: 9px; 
         color: #333; 
         resize: none;
-        overflow: hidden; /* ซ่อน scrollbar ตอนพิมพ์ */
+        overflow: hidden;
         -webkit-print-color-adjust: exact; 
         print-color-adjust: exact; 
     }
@@ -61,7 +61,7 @@ th { background-color: #232f3e; color: #fff; }
 </head>
 <body>
 <div class="container">
-<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.0</span></h2>
+<h2 style="margin-top:0;">SG Changed Detector <span style="float: right; font-size: 12px; color: #888; font-weight: normal; margin-top: 8px;">v2.1</span></h2>
 
 <div id="resultText" style="margin-bottom:15px; font-weight:bold;"></div>
 <table id="resultTable" style="display:none;">
@@ -122,8 +122,8 @@ if(groupIdIndex === -1) {
     return;
 }
 
-var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
-var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).map(function(c) { return c.replace(/["']/g,'').trim(); }); });
+var rows1 = lines1.slice(1).map(function(l) { return l.split(separator).call(function(c) { return c.replace(/["']/g,'').trim(); }); });
+var rows2 = lines2.slice(1).map(function(l) { return l.split(separator).call(function(c) { return c.replace(/["']/g,'').trim(); }); });
 
 var map1 = {};
 rows1.forEach(function(row) {
@@ -219,19 +219,23 @@ appendRows(removedRows, 'removed', '- REMOVE');
 tBody.innerHTML = bodyHtml;
 };
 
-// ฟังก์ชันขยายความสูง textarea ให้พอดีกับข้อความก่อนพิมพ์
+// ปรับความสูง textarea ให้พอดีเป๊ะไม่ออกทะเล
 window.printReport = function() {
     const textAreas = document.querySelectorAll('textarea');
     textAreas.forEach(ta => {
-        // เก็บความสูงเดิมไว้ก่อน
         ta.dataset.originalHeight = ta.style.height;
-        // ปรับความสูงตาม scrollHeight เพื่อให้เห็นข้อความทั้งหมด
-        ta.style.height = ta.scrollHeight + 'px';
+        // คำนวณความสูงแบบพอดีเป๊ะ
+        const computedStyle = window.getComputedStyle(ta);
+        const lineHt = parseFloat(computedStyle.lineHeight) || 14;
+        const lineCount = ta.value.split('\n').length;
+        const padding = parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
+        const calculatedHeight = (lineCount * lineHt) + padding + 10;
+        
+        ta.style.height = Math.max(100, calculatedHeight) + 'px';
     });
 
     window.print();
 
-    // คืนค่าความสูงเดิมหลังจากสั่งพิมพ์เสร็จ
     textAreas.forEach(ta => {
         ta.style.height = ta.dataset.originalHeight || '';
     });
