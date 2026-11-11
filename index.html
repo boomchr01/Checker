@@ -1,0 +1,124 @@
+<script>
+    function readFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e);
+            reader.readAsText(file);
+        });
+    }
+
+    function parseCSV(text) {
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+        if (lines.length === 0) return { header: [], rows: [], fingerprints: [] };
+        
+        // แยก Header และตัดอักขระขยะ/ช่องว่าง
+        const header = lines[0].split(',').map(h => h.replace(/["']/g, '').trim());
+        
+        // แยก Row และล้างข้อมูลแต่ละ Cell ให้สะอาด
+        const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.replace(/["']/g, '').trim()));
+        
+        // สร้าง Fingerprint (ตัวแทนบรรทัด) เพื่อใช้เทียบให้แม่นยำ ทนทานต่อ Space/Quote/ตัวพิมพ์ใหญ่เล็ก
+        const fingerprints = rows.map(row => row.join('|').toLowerCase());
+        
+        return { header, rows, fingerprints };
+    }
+
+    async function processFiles() {
+        const baselineFile = document.getElementById('baselineCsv').files[0];
+        const currentFile = document.getElementById('currentCsv').files[0];
+
+        if (!baselineFile || !currentFile) {
+            alert('กรุณาเลือกไฟล์ CSV ให้ครบทั้งสองช่องครับ');
+            return;
+        }
+
+        try {
+            const baselineText = await readFile(baselineFile);
+            const currentText = await readFile(currentFile);
+
+            const baselineData = parseCSV(baselineText);
+            const currentData = parseCSV(currentText);
+
+            if(baselineData.header.length === 0 || currentData.header.length === 0) {
+                alert('รูปแบบไฟล์ CSV ไม่ถูกต้อง หรือไฟล์ว่างเปล่า');
+                return;
+            }
+
+            renderHeader(baselineData.header);
+
+            // นำ Fingerprint มาใส่ใน Set แทนการใช้บรรทัดดิบๆ
+            const baselineSet = new Set(baselineData.fingerprints);
+            const currentSet = new Set(currentData.fingerprints);
+
+            const addedRules = [];
+            const removedRules = [];
+
+            // ตรวจสอบ Added
+            currentData.fingerprints.forEach((fingerprint, index) => {
+                if (!baselineSet.has(fingerprint)) {
+                    addedRules.push(currentData.rows[index]);
+                }
+            });
+
+            // ตรวจสอบ Removed
+            baselineData.fingerprints.forEach((fingerprint, index) => {
+                if (!currentSet.has(fingerprint)) {
+                    removedRules.push(baselineData.rows[index]);
+                }
+            });
+
+            renderResults(addedRules, removedRules);
+
+        } catch (error) {
+            console.error("Error processing files:", error);
+            alert("เกิดข้อผิดพลาดในการอ่านไฟล์ โปรดลองอีกครั้ง");
+        }
+    }
+
+    function renderHeader(headers) {
+        const headerRow = document.getElementById('tableHeader');
+        headerRow.innerHTML = '<th style="width: 120px;">Change Status</th>';
+        headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
+        });
+    }
+
+    function renderResults(added, removed) {
+        const table = document.getElementById('resultTable');
+        const tbody = document.getElementById('tableBody');
+        const summary = document.getElementById('summary');
+        tbody.innerHTML = '';
+
+        if (added.length === 0 && removed.length === 0) {
+            summary.innerHTML = '<span style="color: #1e7e34; font-weight: bold;">✅ No drift detected. Security Groups match perfectly.</span>';
+            table.style.display = 'none';
+            return;
+        }
+
+        summary.innerHTML = `⚠️ <b>Drift Detected:</b> <span class="badge-add">+${added.length} Added</span> <span class="badge-del">-${removed.length} Removed</span>`;
+        table.style.display = 'table';
+
+        added.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.className = 'status-added';
+            let html = `<td><span class="badge-add">ADDED</span></td>`;
+            row.forEach(cell => { html += `<td>${cell}</td>`; });
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+
+        removed.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.className = 'status-removed';
+            let html = `<td><span class="badge-del">REMOVED</span></td>`;
+            row.forEach(cell => { html += `<td>${cell}</td>`; });
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('compareBtn').addEventListener('click', processFiles);
+</script>
